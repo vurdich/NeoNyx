@@ -24,7 +24,8 @@ jobs:
         shell: pwsh
         run: |
           $version = "6.0.$env:GITHUB_RUN_NUMBER"
-          Set-Content -Path src/version.h -Value "#pragma once`n#define NEONYX_VERSION L\`"$version\`"" -Encoding ascii
+          $header = "#pragma once" + "`n" + '#define NEONYX_VERSION L"' + $version + '"'
+          Set-Content -Path src/version.h -Value $header -Encoding ascii
 
       - name: Build NeoNyx.exe
         shell: cmd
