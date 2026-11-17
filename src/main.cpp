@@ -2,6 +2,7 @@
 #define _UNICODE
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "version.h"
 #include <windowsx.h>
 #include <commctrl.h>
 #include <commdlg.h>
@@ -965,6 +966,21 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
     PositionIsland(hwnd, false);
     ShowWindow(hwnd, SW_SHOWNOACTIVATE);
     UpdateWindow(hwnd);
+
+    // Quietly check GitHub Releases for a newer installer.
+    wchar_t modulePath[MAX_PATH]{};
+    GetModuleFileNameW(nullptr, modulePath, MAX_PATH);
+    PathRemoveFileSpecW(modulePath);
+    std::wstring updaterPath = std::wstring(modulePath) + L"\\update.ps1";
+    std::wstring command = L"powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"" +
+        updaterPath + L"\" \"" NEONYX_VERSION L"\"";
+    STARTUPINFOW startup{}; startup.cb = sizeof(startup);
+    startup.dwFlags = STARTF_USESHOWWINDOW; startup.wShowWindow = SW_HIDE;
+    PROCESS_INFORMATION process{};
+    if (CreateProcessW(nullptr, command.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW,
+        nullptr, modulePath, &startup, &process)) {
+        CloseHandle(process.hThread); CloseHandle(process.hProcess);
+    }
 
     MSG msg{};
     while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
