@@ -44,7 +44,8 @@ enum : int {
     ID_E_NAME = 1101, ID_E_PATH = 1102, ID_E_BROWSE = 1103,
     ID_E_SAVE = 1104, ID_E_CANCEL = 1105, ID_E_CATEGORY = 1106,
     ID_VAULT = 1010, ID_THEME = 1011,
-    ID_COLLAPSE = 1012,
+    ID_COLLAPSE = 1012, ID_MEDIA_PREV = 1013, ID_MEDIA_PLAY = 1014,
+    ID_MEDIA_NEXT = 1015, ID_SPOTIFY = 1016,
     ID_V_LIST = 1201, ID_V_SERVICE = 1202, ID_V_LOGIN = 1203,
     ID_V_PASSWORD = 1204, ID_V_URL = 1205, ID_V_ADD = 1206,
     ID_V_UPDATE = 1207, ID_V_DELETE = 1208, ID_V_COPY = 1209, ID_V_SHOW = 1210
@@ -64,6 +65,7 @@ bool g_revealPassword = false;
 std::wstring g_dataDir;
 
 HINSTANCE g_instance{};
+HWND g_clockTitle{}, g_musicTitle{};
 HWND g_window{}, g_search{}, g_cards{}, g_status{};
 bool g_expanded = false;
 int g_animStep = 0, g_animStartW = 196, g_animStartH = 44;
@@ -221,6 +223,13 @@ void ToggleTheme() {
     else { kBg=RGB(16,17,27); kPanel=RGB(24,25,39); kPanel2=RGB(31,32,49); kText=RGB(238,238,248); kMuted=RGB(157,159,180); }
     WritePrivateProfileStringW(L"Settings",L"LightTheme",g_lightTheme?L"1":L"0",g_iniPath.c_str());
     if(g_window) InvalidateRect(g_window,nullptr,TRUE); if(g_cards) InvalidateRect(g_cards,nullptr,TRUE);
+}
+
+void SendMediaKey(WORD key) {
+    INPUT input[2]{};
+    input[0].type = INPUT_KEYBOARD; input[0].ki.wVk = key;
+    input[1].type = INPUT_KEYBOARD; input[1].ki.wVk = key; input[1].ki.dwFlags = KEYEVENTF_KEYUP;
+    SendInput(2, input, sizeof(INPUT));
 }
 
 void UpdateStatus() {
@@ -722,31 +731,39 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Segoe UI");
 
         HWND title = CreateWindowW(L"STATIC", L"NeoNyx", WS_CHILD | WS_VISIBLE,
-            28, 22, 280, 42, hwnd, nullptr, g_instance, nullptr);
+            28, 18, 280, 34, hwnd, nullptr, g_instance, nullptr);
         SetFont(title, g_boldFont);
         HWND subtitle = CreateWindowW(L"STATIC", L"Твоя библиотека приложений",
-            WS_CHILD | WS_VISIBLE, 30, 62, 360, 24, hwnd, nullptr, g_instance, nullptr);
+            WS_CHILD | WS_VISIBLE, 30, 52, 360, 24, hwnd, nullptr, g_instance, nullptr);
         SetFont(subtitle, g_smallFont);
         g_status = CreateWindowW(L"STATIC", L"", WS_CHILD | WS_VISIBLE,
-            30, 88, 560, 20, hwnd, nullptr, g_instance, nullptr);
+            30, 78, 560, 20, hwnd, nullptr, g_instance, nullptr);
         SetFont(g_status, g_smallFont);
         UpdateStatus();
         SetTimer(hwnd, kStatusTimer, 1000, nullptr);
-        AddButton(hwnd, ID_COLLAPSE, L"− Свернуть", 830, 20, 120, 36);
+        AddButton(hwnd, ID_COLLAPSE, L"− Свернуть", 830, 18, 120, 36);
+        g_clockTitle = CreateWindowW(L"STATIC", L"ВРЕМЯ И ДАТА", WS_CHILD | WS_VISIBLE, 30, 108, 180, 20, hwnd, nullptr, g_instance, nullptr);
+        SetFont(g_clockTitle, g_boldFont);
+        g_musicTitle = CreateWindowW(L"STATIC", L"♫  Сейчас играет: управление мультимедиа Windows", WS_CHILD | WS_VISIBLE, 30, 132, 560, 24, hwnd, nullptr, g_instance, nullptr);
+        SetFont(g_musicTitle, g_font);
+        AddButton(hwnd, ID_MEDIA_PREV, L"Пред.", 650, 112, 58, 38);
+        AddButton(hwnd, ID_MEDIA_PLAY, L"▶ / ⏸", 716, 112, 78, 38, true);
+        AddButton(hwnd, ID_MEDIA_NEXT, L"След.", 802, 112, 58, 38);
+        AddButton(hwnd, ID_SPOTIFY, L"Spotify", 868, 112, 82, 38);
 
         g_search = CreateWindowExW(0, L"EDIT", L"",
             WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL,
-            30, 112, 590, 36, hwnd, (HMENU)ID_SEARCH, g_instance, nullptr);
+            30, 194, 590, 36, hwnd, (HMENU)ID_SEARCH, g_instance, nullptr);
         SetFont(g_search, g_font);
 
-        AddButton(hwnd, ID_ADD, L"+ Добавить", 650, 108, 145, 42, true);
-        AddButton(hwnd, ID_RUN, L"Запустить", 805, 108, 145, 42, true);
+        AddButton(hwnd, ID_ADD, L"+ Добавить", 650, 190, 145, 42, true);
+        AddButton(hwnd, ID_RUN, L"Запустить", 805, 190, 145, 42, true);
         AddButton(hwnd, ID_VAULT, L"Пароли", 650, 58, 105, 36);
         AddButton(hwnd, ID_THEME, L"Тема", 765, 58, 85, 36);
 
         g_cards = CreateWindowExW(WS_EX_CLIENTEDGE, L"NeoNyxCardsWindow", L"",
             WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_VSCROLL,
-            30, 170, 920, 390, hwnd, (HMENU)ID_LIST, g_instance, nullptr);
+            30, 250, 920, 310, hwnd, (HMENU)ID_LIST, g_instance, nullptr);
 
         AddButton(hwnd, ID_EDIT, L"Редактировать", 220, 580, 145, 42);
         AddButton(hwnd, ID_UP, L"↑", 375, 580, 55, 42);
@@ -759,13 +776,19 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     }
     case WM_SIZE: {
         int w = LOWORD(lp), h = HIWORD(lp);
-        if (g_search) MoveWindow(g_search, 30, 112, (std::max)(250, w - 390), 36, TRUE);
+        if (g_search) MoveWindow(g_search, 30, 194, (std::max)(250, w - 390), 36, TRUE);
+        if (g_clockTitle) MoveWindow(g_clockTitle, 30, 108, 180, 20, TRUE);
+        if (g_musicTitle) MoveWindow(g_musicTitle, 30, 132, w - 370, 24, TRUE);
+        if (GetDlgItem(hwnd, ID_MEDIA_PREV)) MoveWindow(GetDlgItem(hwnd, ID_MEDIA_PREV), w - 330, 112, 58, 38, TRUE);
+        if (GetDlgItem(hwnd, ID_MEDIA_PLAY)) MoveWindow(GetDlgItem(hwnd, ID_MEDIA_PLAY), w - 264, 112, 78, 38, TRUE);
+        if (GetDlgItem(hwnd, ID_MEDIA_NEXT)) MoveWindow(GetDlgItem(hwnd, ID_MEDIA_NEXT), w - 176, 112, 58, 38, TRUE);
+        if (GetDlgItem(hwnd, ID_SPOTIFY)) MoveWindow(GetDlgItem(hwnd, ID_SPOTIFY), w - 112, 112, 82, 38, TRUE);
         HWND add = GetDlgItem(hwnd, ID_ADD), run = GetDlgItem(hwnd, ID_RUN);
-        if (add) MoveWindow(add, w - 330, 108, 145, 42, TRUE);
-        if (run) MoveWindow(run, w - 175, 108, 145, 42, TRUE);
+        if (add) MoveWindow(add, w - 330, 190, 145, 42, TRUE);
+        if (run) MoveWindow(run, w - 175, 190, 145, 42, TRUE);
         if (GetDlgItem(hwnd, ID_VAULT)) MoveWindow(GetDlgItem(hwnd, ID_VAULT), w - 330, 58, 105, 36, TRUE);
         if (GetDlgItem(hwnd, ID_THEME)) MoveWindow(GetDlgItem(hwnd, ID_THEME), w - 215, 58, 85, 36, TRUE);
-        if (g_cards) MoveWindow(g_cards, 30, 170, (std::max)(300, w - 60), (std::max)(180, h - 250), TRUE);
+        if (g_cards) MoveWindow(g_cards, 30, 250, (std::max)(300, w - 60), (std::max)(180, h - 330), TRUE);
         HWND edit = GetDlgItem(hwnd, ID_EDIT), up = GetDlgItem(hwnd, ID_UP);
         HWND down = GetDlgItem(hwnd, ID_DOWN), remove = GetDlgItem(hwnd, ID_REMOVE);
         HWND about = GetDlgItem(hwnd, ID_ABOUT);
@@ -789,6 +812,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case ID_VAULT: OpenVault(); return 0;
         case ID_THEME: ToggleTheme(); return 0;
         case ID_COLLAPSE: SetExpanded(hwnd, false); return 0;
+        case ID_MEDIA_PREV: SendMediaKey(VK_MEDIA_PREV_TRACK); return 0;
+        case ID_MEDIA_PLAY: SendMediaKey(VK_MEDIA_PLAY_PAUSE); return 0;
+        case ID_MEDIA_NEXT: SendMediaKey(VK_MEDIA_NEXT_TRACK); return 0;
+        case ID_SPOTIFY: ShellExecuteW(hwnd, L"open", L"spotify:", nullptr, nullptr, SW_SHOWNORMAL); return 0;
         case ID_ABOUT:
             MessageBoxW(hwnd, L"NeoNyx\n\nНативная версия для Windows.\nCreated by Lunexxy",
                 L"О программе NeoNyx", MB_OK | MB_ICONINFORMATION);
