@@ -1,6 +1,6 @@
 ; NeoNyx Windows Installer — Inno Setup 6
 #define AppName "NeoNyx"
-#define AppVersion "6.0.0"
+#define AppVersion GetEnv("NEONYX_VERSION")
 #define AppPublisher "Lunexxy"
 #define AppExeName "NeoNyx.exe"
 
@@ -21,6 +21,8 @@ WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=admin
 DisableProgramGroupPage=yes
+CloseApplications=yes
+RestartApplications=no
 
 [Tasks]
 Name: "desktopicon"; Description: "Создать ярлык на рабочем столе"; GroupDescription: "Дополнительные ярлыки:"
