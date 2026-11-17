@@ -651,8 +651,17 @@ LRESULT CALLBACK CardsProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         PAINTSTRUCT ps{};
         HDC dc = BeginPaint(hwnd, &ps);
         RECT client{}; GetClientRect(hwnd, &client);
+        // Paint the entire client area first so no default white strips remain.
         HBRUSH bg = CreateSolidBrush(kBg);
-        FillRect(dc, &client, bg); DeleteObject(bg);
+        FillRect(dc, &client, bg);
+        DeleteObject(bg);
+        HPEN border = CreatePen(PS_SOLID, 1, kPanel2);
+        HGDIOBJ oldPen = SelectObject(dc, border);
+        HGDIOBJ oldBrush = SelectObject(dc, GetStockObject(NULL_BRUSH));
+        Rectangle(dc, 0, 0, client.right, client.bottom);
+        SelectObject(dc, oldBrush);
+        SelectObject(dc, oldPen);
+        DeleteObject(border);
         auto cards = GetCardRects(hwnd);
         for (const auto& card : cards) {
             if (card.rect.bottom < 0 || card.rect.top > client.bottom) continue;
@@ -789,7 +798,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         AddButton(hwnd, ID_VAULT, L"Пароли", 650, 58, 105, 36);
         AddButton(hwnd, ID_THEME, L"Тема", 765, 58, 85, 36);
 
-        g_cards = CreateWindowExW(WS_EX_CLIENTEDGE, L"NeoNyxCardsWindow", L"",
+        g_cards = CreateWindowExW(0, L"NeoNyxCardsWindow", L"",
             WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_VSCROLL,
             30, 250, 920, 310, hwnd, (HMENU)ID_LIST, g_instance, nullptr);
 
