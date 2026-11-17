@@ -259,7 +259,7 @@ void UpdateCardsScroll() {
     si.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
     si.nMin = 0;
     si.nMax = (std::max)(0, contentHeight - 1);
-    si.nPage = (UINT)(std::max)(1, client.bottom - client.top);
+    si.nPage = (UINT)(std::max)(1L, client.bottom - client.top);
     int maxPos = (std::max)(0, contentHeight - (int)si.nPage);
     g_scrollY = (std::max)(0, (std::min)(g_scrollY, maxPos));
     si.nPos = g_scrollY;
