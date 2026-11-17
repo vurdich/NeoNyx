@@ -1,3 +1,3 @@
-#include "resource.h"
+#include "resources.h"
 IDI_NEONYX ICON "..\\neonyx.ico"
 1 24 "..\\src\\NeoNyx.manifest"
