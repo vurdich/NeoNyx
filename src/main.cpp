@@ -2,6 +2,8 @@
 #define _UNICODE
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Media.Control.h>
 #include "version.h"
 #include <windowsx.h>
 #include <commctrl.h>
@@ -27,6 +29,9 @@
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "shlwapi.lib")
 #pragma comment(lib, "crypt32.lib")
+
+using namespace winrt;
+using namespace Windows::Media::Control;
 
 namespace {
 constexpr wchar_t kClassName[] = L"NeoNyxMainWindow";
@@ -231,6 +236,27 @@ void SendMediaKey(WORD key) {
     input[0].type = INPUT_KEYBOARD; input[0].ki.wVk = key;
     input[1].type = INPUT_KEYBOARD; input[1].ki.wVk = key; input[1].ki.dwFlags = KEYEVENTF_KEYUP;
     SendInput(2, input, sizeof(INPUT));
+}
+
+void UpdateNowPlaying() {
+    if (!g_musicTitle) return;
+    try {
+        auto manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+        auto session = manager.GetCurrentSession();
+        if (!session) {
+            SetWindowTextW(g_musicTitle, L"♫  Сейчас ничего не воспроизводится");
+            return;
+        }
+        auto props = session.TryGetMediaPropertiesAsync().get();
+        std::wstring title = props.Title().c_str();
+        std::wstring artist = props.Artist().c_str();
+        if (title.empty()) title = L"Неизвестный трек";
+        std::wstring label = L"♫  " + title;
+        if (!artist.empty()) label += L" — " + artist;
+        SetWindowTextW(g_musicTitle, label.c_str());
+    } catch (...) {
+        SetWindowTextW(g_musicTitle, L"♫  Не удалось получить информацию о музыке");
+    }
 }
 
 void UpdateStatus() {
@@ -724,6 +750,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     switch (msg) {
     case WM_CREATE: {
         g_window = hwnd;
+        try { winrt::init_apartment(winrt::apartment_type::multi_threaded); } catch (...) {}
         g_font = CreateFontW(17, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
             OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH, L"Segoe UI");
         g_boldFont = CreateFontW(17, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
@@ -827,7 +854,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         }
         break;
     case WM_TIMER:
-        if (wp == kStatusTimer) { UpdateStatus(); InvalidateRect(hwnd, nullptr, FALSE); return 0; }
+        if (wp == kStatusTimer) { UpdateStatus(); UpdateNowPlaying(); InvalidateRect(hwnd, nullptr, FALSE); return 0; }
         if (wp == kIslandAnimTimer) {
             ++g_animStep;
             const double t = (std::min)(1.0, g_animStep / 15.0);
