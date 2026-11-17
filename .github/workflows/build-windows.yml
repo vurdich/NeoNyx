@@ -24,3 +24,25 @@ jobs:
           rc /nologo /fo build\NeoNyx.res src\NeoNyx.rc
           if errorlevel 1 exit /b 1
           cl /nologo /std:c++17 /EHsc /O2 /utf-8 /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN src\main.cpp build\NeoNyx.res /link /SUBSYSTEM:WINDOWS user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib shlwapi.lib crypt32.lib /OUT:build\NeoNyx.exe
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build NeoNyx installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (!(Test-Path $iscc)) { throw "Inno Setup compiler not found: $iscc" }
+          & $iscc installer\NeoNyx.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload NeoNyx files
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeoNyx-Windows
+          path: |
+            build/NeoNyx.exe
+            dist/NeoNyx_Setup.exe
+          if-no-files-found: error
+          compression-level: 9
