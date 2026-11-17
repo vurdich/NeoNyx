@@ -33,7 +33,7 @@ jobs:
           if not exist build mkdir build
           rc /nologo /fo build\NeoNyx.res src\NeoNyx.rc
           if errorlevel 1 exit /b 1
-          cl /nologo /std:c++17 /EHsc /O2 /utf-8 /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN src\main.cpp build\NeoNyx.res /link /SUBSYSTEM:WINDOWS user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib shlwapi.lib crypt32.lib /OUT:build\NeoNyx.exe
+          cl /nologo /std:c++20 /EHsc /O2 /utf-8 /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN src\main.cpp build\NeoNyx.res /link /SUBSYSTEM:WINDOWS user32.lib gdi32.lib comctl32.lib comdlg32.lib shell32.lib shlwapi.lib crypt32.lib windowsapp.lib /OUT:build\NeoNyx.exe
 
       - name: Install Inno Setup
         shell: pwsh
