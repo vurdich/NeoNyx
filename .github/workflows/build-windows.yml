@@ -1,5 +1,8 @@
 name: Build NeoNyx for Windows
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
@@ -46,3 +49,13 @@ jobs:
             dist/NeoNyx_Setup.exe
           if-no-files-found: error
           compression-level: 9
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v6.0.${{ github.run_number }}
+          name: NeoNyx v6.0.${{ github.run_number }}
+          make_latest: true
+          files: |
+            build/NeoNyx.exe
+            dist/NeoNyx_Setup.exe
