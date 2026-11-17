@@ -799,7 +799,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         AddButton(hwnd, ID_THEME, L"Тема", 765, 58, 85, 36);
 
         g_cards = CreateWindowExW(0, L"NeoNyxCardsWindow", L"",
-            WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_VSCROLL,
+            WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_VSCROLL | WS_CLIPCHILDREN,
             30, 250, 920, 310, hwnd, (HMENU)ID_LIST, g_instance, nullptr);
 
         AddButton(hwnd, ID_EDIT, L"Редактировать", 220, 580, 145, 42);
@@ -813,19 +813,19 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     }
     case WM_SIZE: {
         int w = LOWORD(lp), h = HIWORD(lp);
-        if (g_search) MoveWindow(g_search, 30, 194, (std::max)(250, w - 390), 36, TRUE);
-        if (g_clockTitle) MoveWindow(g_clockTitle, 30, 108, 180, 20, TRUE);
-        if (g_musicTitle) MoveWindow(g_musicTitle, 30, 132, w - 370, 24, TRUE);
-        if (GetDlgItem(hwnd, ID_MEDIA_PREV)) MoveWindow(GetDlgItem(hwnd, ID_MEDIA_PREV), w - 330, 112, 58, 38, TRUE);
-        if (GetDlgItem(hwnd, ID_MEDIA_PLAY)) MoveWindow(GetDlgItem(hwnd, ID_MEDIA_PLAY), w - 264, 112, 78, 38, TRUE);
-        if (GetDlgItem(hwnd, ID_MEDIA_NEXT)) MoveWindow(GetDlgItem(hwnd, ID_MEDIA_NEXT), w - 176, 112, 58, 38, TRUE);
-        if (GetDlgItem(hwnd, ID_SPOTIFY)) MoveWindow(GetDlgItem(hwnd, ID_SPOTIFY), w - 112, 112, 82, 38, TRUE);
+        if (g_search) MoveWindow(g_search, 30, 194, (std::max)(250, w - 390), 40, TRUE);
+        if (g_clockTitle) MoveWindow(g_clockTitle, 30, 108, 180, 22, TRUE);
+        if (g_musicTitle) MoveWindow(g_musicTitle, 30, 136, (std::max)(260, w - 390), 28, TRUE);
+        if (GetDlgItem(hwnd, ID_MEDIA_PREV)) MoveWindow(GetDlgItem(hwnd, ID_MEDIA_PREV), w - 340, 132, 62, 38, TRUE);
+        if (GetDlgItem(hwnd, ID_MEDIA_PLAY)) MoveWindow(GetDlgItem(hwnd, ID_MEDIA_PLAY), w - 270, 132, 78, 38, TRUE);
+        if (GetDlgItem(hwnd, ID_MEDIA_NEXT)) MoveWindow(GetDlgItem(hwnd, ID_MEDIA_NEXT), w - 182, 132, 62, 38, TRUE);
+        if (GetDlgItem(hwnd, ID_SPOTIFY)) MoveWindow(GetDlgItem(hwnd, ID_SPOTIFY), w - 112, 132, 82, 38, TRUE);
         HWND add = GetDlgItem(hwnd, ID_ADD), run = GetDlgItem(hwnd, ID_RUN);
         if (add) MoveWindow(add, w - 330, 190, 145, 42, TRUE);
         if (run) MoveWindow(run, w - 175, 190, 145, 42, TRUE);
         if (GetDlgItem(hwnd, ID_VAULT)) MoveWindow(GetDlgItem(hwnd, ID_VAULT), w - 330, 58, 105, 36, TRUE);
         if (GetDlgItem(hwnd, ID_THEME)) MoveWindow(GetDlgItem(hwnd, ID_THEME), w - 215, 58, 85, 36, TRUE);
-        if (g_cards) MoveWindow(g_cards, 30, 250, (std::max)(300, w - 60), (std::max)(180, h - 330), TRUE);
+        if (g_cards) MoveWindow(g_cards, 30, 252, (std::max)(300, w - 60), (std::max)(180, h - 332), TRUE);
         HWND edit = GetDlgItem(hwnd, ID_EDIT), up = GetDlgItem(hwnd, ID_UP);
         HWND down = GetDlgItem(hwnd, ID_DOWN), remove = GetDlgItem(hwnd, ID_REMOVE);
         HWND about = GetDlgItem(hwnd, ID_ABOUT);
@@ -996,7 +996,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int show) {
     if (!RegisterClassExW(&wc)) return 1;
 
     HWND hwnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, kClassName, L"NeoNyx",
-        WS_POPUP, 0, 8, 196, 44,
+        WS_POPUP | WS_CLIPCHILDREN, 0, 8, 196, 44,
         nullptr, nullptr, instance, nullptr);
     if (!hwnd) return 1;
     PositionIsland(hwnd, false);
